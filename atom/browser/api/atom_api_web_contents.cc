@@ -6,6 +6,7 @@
 
 #include <set>
 
+#include "atom/browser/api/atom_api_session.h"
 #include "atom/browser/atom_browser_client.h"
 #include "atom/browser/atom_browser_context.h"
 #include "atom/browser/native_window.h"
@@ -559,6 +560,14 @@ void WebContents::InspectServiceWorker() {
   }
 }
 
+v8::Local<v8::Value> WebContents::Session(v8::Isolate* isolate) {
+  if (session_.IsEmpty()) {
+    auto handle = Session::Create(isolate);
+    session_.Reset(isolate, handle.ToV8());
+  }
+  return v8::Local<v8::Value>::New(isolate, session_);
+}
+
 void WebContents::HasServiceWorker(
     const base::Callback<void(bool)>& callback) {
   auto context = GetServiceWorkerContext(web_contents());
@@ -750,6 +759,7 @@ mate::ObjectTemplateBuilder WebContents::GetObjectTemplateBuilder(
         .SetMethod("unregisterServiceWorker",
                    &WebContents::UnregisterServiceWorker)
         .SetMethod("inspectServiceWorker", &WebContents::InspectServiceWorker)
+        .SetProperty("session", &WebContents::Session)
         .Build());
 
   return mate::ObjectTemplateBuilder(
